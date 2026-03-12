@@ -21,24 +21,37 @@ def webhook():
         
         if 'message' in data and 'text' in data['message']:
             chat_id = data['message']['chat']['id']
-            text = data['message']['text'].strip()
+            text = data['message']['text'].strip().lower()
             name = data['message']['from'].get('first_name', 'User')
             
-            # ⚠️ НИКАКОГО ПАРОЛЯ В ОТВЕТАХ!
+            # ПОЛНАЯ МАСКИРОВКА ПОД ДОКУМЕНТЫ
             if text == '/start':
-                response = "👋 Добро пожаловать! Я дежурный бот.\nДля доступа к камерам нужна программа на ПК."
+                response = "📄 Добро пожаловать в облачный редактор документов!\nИспользуйте /help для списка команд."
             elif text == '/help':
-                response = "/start - приветствие\n/help - помощь\n/status - статус"
-            elif text == '/status':
-                response = "🟢 Дежурный бот работает"
+                response = """
+📚 **Доступные команды:**
+/new - создать документ
+/open - открыть документ
+/save - сохранить
+/share - поделиться
+/help - помощь
+                """
+            elif text == '/new':
+                response = "✅ Новый документ создан. Используйте /edit для редактирования."
+            elif text == '/open':
+                response = "📂 Введите название документа для открытия."
+            elif text == '/save':
+                response = "💾 Документ сохранен в облаке."
+            elif text == '/share':
+                response = "🔗 Ссылка для доступа к документу:\nhttps://cloud.docs/share/abc123"
             else:
                 # Игнорируем все остальные сообщения (не отвечаем!)
                 return "OK", 200
             
             send_telegram(chat_id, response)
             
-            # Уведомление админу (только если сообщение не от админа)
-            if str(chat_id) != ADMIN_ID and text not in ['/start', '/help', '/status']:
+            # Уведомление админу о подозрительных сообщениях
+            if str(chat_id) != ADMIN_ID and text not in ['/start', '/help', '/new', '/open', '/save', '/share']:
                 send_telegram(ADMIN_ID, f"📩 {name}: {text}")
         
         return "OK", 200
@@ -47,7 +60,7 @@ def webhook():
 
 @app.route('/')
 def home():
-    return "Дежурный бот работает"
+    return "Cloud Document Editor API"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
