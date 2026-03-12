@@ -10,7 +10,6 @@ ADMIN_ID = "6802813322"
 
 # Хранилище активных ПК-клиентов
 active_pc = {}
-last_check = {}
 
 def send_telegram(chat_id, text):
     try:
@@ -26,6 +25,7 @@ def pc_on():
     chat_id = data.get('chat_id')
     if chat_id:
         active_pc[chat_id] = time.time()
+        print(f"✅ ПК активен для {chat_id}")
         return {"ok": True, "message": "PC active"}
     return {"ok": False}, 400
 
@@ -36,6 +36,7 @@ def pc_off():
     chat_id = data.get('chat_id')
     if chat_id and chat_id in active_pc:
         del active_pc[chat_id]
+        print(f"❌ ПК отключен для {chat_id}")
     return {"ok": True}
 
 @app.route('/pc-status', methods=['GET'])
@@ -59,8 +60,8 @@ def webhook():
             
             # Проверяем, активна ли ПК-программа для этого пользователя
             if chat_id in active_pc:
-                # Если ПК активна - не отвечаем, пусть она обрабатывает
-                print(f"⏭️ Сообщение от {name} ушло в ПК-программу")
+                # Если ПК активна - НЕ ОТВЕЧАЕМ, пусть она обрабатывает
+                print(f"⏭️ Сообщение от {name} перенаправлено в ПК")
                 return "OK", 200
             
             # Если ПК не активна - отвечаем как документ-бот
@@ -98,7 +99,15 @@ def webhook():
 
 @app.route('/')
 def home():
-    return "Document Editor API"
+    return """
+    <html>
+        <head><title>Cloud Document Editor</title></head>
+        <body>
+            <h1>📄 Cloud Document Editor API</h1>
+            <p>Сервис работает</p>
+        </body>
+    </html>
+    """
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
