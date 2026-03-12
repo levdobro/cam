@@ -26,7 +26,7 @@ def pc_on():
     if chat_id:
         active_pc[chat_id] = time.time()
         print(f"✅ ПК активен для {chat_id}")
-        return {"ok": True, "message": "PC active"}
+        return {"ok": True}
     return {"ok": False}, 400
 
 @app.route('/pc-off', methods=['POST'])
@@ -39,14 +39,6 @@ def pc_off():
         print(f"❌ ПК отключен для {chat_id}")
     return {"ok": True}
 
-@app.route('/pc-status', methods=['GET'])
-def pc_status():
-    """Проверка, активна ли ПК-программа для пользователя"""
-    chat_id = request.args.get('chat_id')
-    if chat_id and chat_id in active_pc:
-        return {"active": True}
-    return {"active": False}
-
 @app.route('/', methods=['POST'])
 def webhook():
     """Основной обработчик сообщений"""
@@ -58,56 +50,32 @@ def webhook():
             text = data['message']['text'].strip()
             name = data['message']['from'].get('first_name', 'User')
             
-            # Проверяем, активна ли ПК-программа для этого пользователя
+            # Если ПК активна - не отвечаем
             if chat_id in active_pc:
-                # Если ПК активна - НЕ ОТВЕЧАЕМ, пусть она обрабатывает
-                print(f"⏭️ Сообщение от {name} перенаправлено в ПК")
+                print(f"⏭️ {name}: {text} -> в ПК")
                 return "OK", 200
             
-            # Если ПК не активна - отвечаем как документ-бот
-            print(f"📄 {name}: {text} (обработано Render)")
+            # Иначе отвечаем как документ-бот
+            print(f"📄 {name}: {text}")
             
             if text == '/start':
-                response = "📄 Добро пожаловать в облачный редактор документов!\nИспользуйте /help для списка команд."
+                response = "📄 Добро пожаловать в облачный редактор документов!"
             elif text == '/help':
-                response = """
-📚 Доступные команды:
-/new - создать документ
-/open - открыть документ
-/save - сохранить
-/share - поделиться
-/help - помощь
-                """
+                response = "/new - создать документ\n/open - открыть\n/save - сохранить"
             elif text == '/new':
-                response = "✅ Новый документ создан."
-            elif text == '/open':
-                response = "📂 Введите название документа."
-            elif text == '/save':
-                response = "💾 Документ сохранен."
-            elif text == '/share':
-                response = "🔗 Ссылка: https://cloud.docs/share/abc123"
+                response = "✅ Новый документ создан"
             else:
-                # Не отвечаем на неизвестные команды
                 return "OK", 200
             
             send_telegram(chat_id, response)
         
         return "OK", 200
-    except Exception as e:
-        print(f"Ошибка: {e}")
+    except:
         return "OK", 200
 
 @app.route('/')
 def home():
-    return """
-    <html>
-        <head><title>Cloud Document Editor</title></head>
-        <body>
-            <h1>📄 Cloud Document Editor API</h1>
-            <p>Сервис работает</p>
-        </body>
-    </html>
-    """
+    return "Cloud Document Editor API"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
